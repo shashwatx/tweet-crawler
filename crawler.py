@@ -9,6 +9,7 @@ coloredlogs.install(logger=logger,
 import os
 import time
 import json
+import csv
 
 
 import twython
@@ -23,6 +24,10 @@ class MissingArgs(Exception):
 
 MAX_RETRY_CNT = 3
 WAIT_TIME = 30
+
+DEFAULT_MESSAGE='UNKNOWN'
+DEFAULT_DATE='UNKNOWN'
+DEFAULT_ID='UNKNOWN'
 
 NUM_TWEETS_IN_A_SINGLE_FETCH=200
 
@@ -123,58 +128,93 @@ class TwitterCrawler():
         num_tweets = 0
         retry_cnt = MAX_RETRY_CNT
 
-        with open(filename, mode='w') as f:
-            f.write('[\n')
+        #with open(filename, mode='w') as f:
+        #    f.write('[\n')
+        with open(filename+'.csv', mode='w') as f:
+            writer = csv.DictWriter(f, fieldnames=['message_id','message_date','message_text','response_id','response_date','response_text'],
+                                    delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+            writer.writeheader()
 
-        while (current_max_id != prev_max_id and retry_cnt > 0):
+            while (current_max_id != prev_max_id and retry_cnt > 0):
 
-            try:
+                try:
 
-                logger.info('Get more tweets...')
+                    logger.info('Get more tweets...')
 
-                if current_max_id > 0:
-                    tweets = self.twitter.get_user_timeline(user_id=user_id, tweet_mode='extended', since_id=since_id, max_id=current_max_id-1, count=NUM_TWEETS_IN_A_SINGLE_FETCH)
-                else:
-                    tweets = self.twitter.get_user_timeline(user_id=user_id, tweet_mode='extended', since_id=since_id, count=NUM_TWEETS_IN_A_SINGLE_FETCH)
+                    if current_max_id > 0:
+                        tweets = self.twitter.get_user_timeline(user_id=user_id, tweet_mode='extended', since_id=since_id, max_id=current_max_id-1, count=NUM_TWEETS_IN_A_SINGLE_FETCH)
+                    else:
+                        tweets = self.twitter.get_user_timeline(user_id=user_id, tweet_mode='extended', since_id=since_id, count=NUM_TWEETS_IN_A_SINGLE_FETCH)
 
-                num_times_api_called=num_times_api_called+1
-                logger.info('Number of calls issued to Twitter API so far: %d', num_times_api_called)
+                    num_times_api_called=num_times_api_called+1
+                    logger.info('Number of calls issued to Twitter API so far: %d', num_times_api_called)
 
-                logger.info('I found %d tweets to write.', len(tweets))
-                num_tweets += len(tweets)
-                logger.info('Total tweets collected so far: %d', num_tweets)
+                    logger.info('I found %d tweets to sift through.', len(tweets))
 
-                logger.info('will write to file...')
+                    logger.info('Total tweets collected so far: %d', num_tweets)
 
-                prev_max_id = current_max_id
-                with open(filename, mode='a') as f:
+                    logger.info('will write to file...')
+
+                    prev_max_id = current_max_id
 
                     for idx, tweet in enumerate(tweets):
-                        f.write(json.dumps(tweet)+',\n')
+
+                        # filter on tweets that represent "handle" responding to someone
+                        response_to=tweet.get('in_reply_to_status_id_str')
+                        if response_to is not None:
+
+                            # create custom json to hold output
+                            out = {}
+
+                            # get response attributes
+                            out['response_id'] = tweet.get('id')
+                            out['response_date'] = tweet.get('created_at')
+                            out['response_text'] = tweet.get('full_text')
+
+                            # get complain attributes
+                            out['message_id'] = response_to
+                            try:
+
+                                # find the tweet associated with the response id
+                                tweetR = self.twitter.show_status(id=response_to)
+                                logger.debug(tweetR)
+
+                                num_times_api_called = num_times_api_called + 1
+
+                                out['message_date'] = tweetR.get('created_at')
+                                out['message_text'] = tweetR.get('text')
+                            except twython.exceptions.TwythonError as e:
+                                out['message_date'] = DEFAULT_DATE
+                                out['message_text'] = DEFAULT_MESSAGE
+
+                            # write
+                            #f.write(json.dumps(out)+',\n')
+                            writer.writerow(out)
+                            num_tweets += 1
 
                         if current_max_id == 0 or current_max_id > int(tweet['id']):
                             current_max_id = int(tweet['id'])
 
 
-                logger.info('done.')
+                    logger.info('done.')
 
-                # no new tweets found
-                if (prev_max_id == current_max_id):
-                    logger.info('breaking: %s',user_id)
-                    break
-
-
-                time.sleep(1)
+                    # no new tweets found
+                    if (prev_max_id == current_max_id):
+                        logger.info('breaking: %s',user_id)
+                        break
 
 
+                    time.sleep(1)
 
-            except twython.exceptions.TwythonRateLimitError:
-                self.rate_limit_error_occured('statuses', '/statuses/user_timeline')
-            except Exception as e:
-                logger.error('Exception: %s',str(e))
-                logger.error('StackTrace: %s', full_stack())
-                logger.error('Encountered while crawling tweets for user_id: %s',user_id)
-                return since_id, True
+
+
+                except twython.exceptions.TwythonRateLimitError:
+                    self.rate_limit_error_occured('statuses', '/statuses/user_timeline')
+                except Exception as e:
+                    logger.error('Exception: %s',str(e))
+                    logger.error('StackTrace: %s', full_stack())
+                    logger.error('Encountered while crawling tweets for user_id: %s',user_id)
+                    return since_id, True
 
         with open(filename, mode='a') as f:
             f.write(']\n')

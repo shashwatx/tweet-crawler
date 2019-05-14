@@ -37,20 +37,5 @@ conf.json
 ```
 ## JSON Manipulation
 
-
-1. Filter all tweets to get tweets of type "_handle_ responds to mentions"
-```
-cat handle.json | jq '.[] | if .in_reply_to_status_id_str!=null then {id: .id_str, text: .full_text, date: .created_at, responseTo: .in_reply_to_status_id_str } else null end '  | grep -v "null" | sed -e 's/}/},/' > handle_responds_to_mentions.json
-```
-
-2. (BONUS) For each message, find how many responds the handle made.
-```
-cat handle_responds_to_mentions.json | jq '.[] | .responseTo' | sort | uniq -c | sort -k1,1 -nr | head
-```
-
-3. For each tweet of type "handle responds to mentions" get the id of mention and call twurl to get the corresponding text
-```
-cat handle_responds_to_mentions.json | jq '.[] | .responseTo' | sort | uniq | xargs -I {} sh -c 'echo {}; ./twurlScript.sh {}; sleep 2'
-```
-
+Use jq
 
