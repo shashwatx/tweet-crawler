@@ -66,9 +66,9 @@ def run(user_, output_, config_):
     with open(os.path.abspath(config_), 'r') as config_f:
         config = json.load(config_f)
 
-    logger.warn('user-id: %s',user_)
-    logger.warn('output: %s',output_)
-    logger.warn('Config is %s',config)
+    logger.warning('user-id: %s',user_)
+    logger.warning('output: %s',output_)
+    logger.warning('Config is %s',config)
 
     collect_tweets_by_user_ids(user_id, output_folder, config)
 
