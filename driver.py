@@ -14,7 +14,6 @@ import click
 import itertools
 from crawler import TwitterCrawler
 
-WAIT_TIME = 30
 CLIENT_ARGS = {"timeout": 30}
 
 
