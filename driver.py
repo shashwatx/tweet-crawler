@@ -70,7 +70,6 @@ def run(user_, output_, config_):
     logger.warn('output: %s',output_)
     logger.warn('Config is %s',config)
 
-    #sys.exit()
     collect_tweets_by_user_ids(user_id, output_folder, config)
 
 
