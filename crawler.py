@@ -47,45 +47,28 @@ class TwitterCrawler():
 
     def __init__(self, *args, **kwargs):
 
-        logger.info('Initing TwitterCrawler.')
-
         # get apikeys
         apikeys = copy.copy(kwargs.pop('apikeys', None))
         if not apikeys:
             raise MissingArgs('apikeys is missing')
         self.apikeys = copy.copy(apikeys)
-        #logger.info('API keys obtained.')
 
         # get output folder
         self.output_folder = kwargs.pop('output_folder')
         #logger.info('Output folder obtained.')
 
         # init twython, get access token
-        logger.info('APIKeys: %s',self.apikeys)
         APP_KEY=apikeys['app_key']
         APP_SECRET=apikeys['app_secret']
 
-        #twitter = twython.Twython(apikeys['app_key'], apikeys['app_secret'], apikeys['oauth_token'], apikeys['oauth_token_secret'], oauth_version=2)
         twitter = twython.Twython(APP_KEY, APP_SECRET, oauth_version=2)
-        #logger.info('Fetching access token...')
+        logger.debug('Fetching access token...')
         ACCESS_TOKEN = twitter.obtain_access_token()
         logger.info('Access token obtained: %s',ACCESS_TOKEN)
-        #try:
-        #    logger.info(twitter.verify_credentials())
-        #except Exception as e:
-        #    logger.error('Cannot authenticate with Twitter API.')
-        #    sys.exit()
 
-        # set access token in kwargs
-        #kwargs['access_token'] = access_token
-        # inject api keys into kwargs
-        #apikeys.pop('app_secret')
-        #kwargs.update(apikeys)
-
-        #logger.info('kwargs: %s',kwargs)
         self.twitter = twython.Twython(APP_KEY, access_token=ACCESS_TOKEN)
-        logger.info('constructor call finished.')
-        #super(TwitterCrawler, self).__init__(*args, **kwargs)
+        logger.debug('constructor call finished.')
+
 
 
 
@@ -114,22 +97,16 @@ class TwitterCrawler():
         if not user_id:
             raise Exception("user_timeline: user_id cannot be None")
 
-        #handle_output_folder = os.path.abspath('%s/%s',self.output_folder, user_id)
-
         filename = os.path.join(self.output_folder, user_id)
         logger.info('Output file: %s',filename)
 
         num_times_api_called=0
-
-        current_since_id = since_id
 
         prev_max_id = -1
         current_max_id = 0
         num_tweets = 0
         retry_cnt = MAX_RETRY_CNT
 
-        #with open(filename, mode='w') as f:
-        #    f.write('[\n')
         with open(filename+'.csv', mode='w') as f:
             writer = csv.DictWriter(f, fieldnames=['message_id','message_date','message_text','response_id','response_date','response_text'],
                                     delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
@@ -139,7 +116,7 @@ class TwitterCrawler():
 
                 try:
 
-                    logger.info('Get more tweets...')
+                    logger.info('Fetch the next batch of %d tweets.',NUM_TWEETS_IN_A_SINGLE_FETCH)
 
                     if current_max_id > 0:
                         tweets = self.twitter.get_user_timeline(user_id=user_id, tweet_mode='extended', since_id=since_id, max_id=current_max_id-1, count=NUM_TWEETS_IN_A_SINGLE_FETCH)
@@ -151,12 +128,7 @@ class TwitterCrawler():
 
                     logger.info('I found %d tweets to sift through.', len(tweets))
 
-                    logger.info('Total tweets collected so far: %d', num_tweets)
-
-                    logger.info('will write to file...')
-
                     prev_max_id = current_max_id
-
                     for idx, tweet in enumerate(tweets):
 
                         # filter on tweets that represent "handle" responding to someone
@@ -196,9 +168,7 @@ class TwitterCrawler():
                             current_max_id = int(tweet['id'])
 
 
-                    logger.info('done.')
-
-                    # no new tweets found
+                    # twitter api won't return any more tweets
                     if (prev_max_id == current_max_id):
                         logger.info('breaking: %s',user_id)
                         break
@@ -206,6 +176,7 @@ class TwitterCrawler():
 
                     time.sleep(1)
 
+                    logger.info('Total tweets collected so far: %d', num_tweets)
 
 
                 except twython.exceptions.TwythonRateLimitError:
