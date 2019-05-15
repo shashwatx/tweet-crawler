@@ -118,13 +118,14 @@ class TwitterCrawler():
 
                     logger.info('Fetch the next batch of %d tweets.',NUM_TWEETS_IN_A_SINGLE_FETCH)
 
+
                     if current_max_id > 0:
                         tweets = self.twitter.get_user_timeline(user_id=user_id, tweet_mode='extended', since_id=since_id, max_id=current_max_id-1, count=NUM_TWEETS_IN_A_SINGLE_FETCH)
                     else:
                         tweets = self.twitter.get_user_timeline(user_id=user_id, tweet_mode='extended', since_id=since_id, count=NUM_TWEETS_IN_A_SINGLE_FETCH)
 
                     num_times_api_called=num_times_api_called+1
-                    logger.info('Number of calls issued to Twitter API so far: %d', num_times_api_called)
+
 
                     logger.info('I found %d tweets to sift through.', len(tweets))
 
@@ -174,8 +175,9 @@ class TwitterCrawler():
                         break
 
 
-                    time.sleep(1)
+                    time.sleep(2)
 
+                    logger.info('Number of calls issued to Twitter API so far: %d', num_times_api_called)
                     logger.info('Total tweets collected so far: %d', num_tweets)
 
 
