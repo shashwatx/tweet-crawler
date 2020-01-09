@@ -133,7 +133,8 @@ class TwitterCrawler():
                     prev_max_id = current_max_id
                     for idx, tweet in enumerate(tweets):
 
-                        # filter on tweets that represent "handle" responding to someone
+                        # we are only interested in those timeline tweets that represent
+                        # the "handle" responding to someone.
                         response_to=tweet.get('in_reply_to_status_id_str')
                         if response_to is not None:
 
@@ -166,6 +167,8 @@ class TwitterCrawler():
                             #f.write(json.dumps(out)+',\n')
                             writer.writerow(out)
                             num_tweets += 1
+                        else:
+                            logger.info("The following is not an interesting tweet: %s",tweet.get('full_text').replace("\n","__$__"))
 
                         if current_max_id == 0 or current_max_id > int(tweet['id']):
                             current_max_id = int(tweet['id'])
@@ -175,7 +178,6 @@ class TwitterCrawler():
                     if (prev_max_id == current_max_id):
                         logger.info('breaking: %s',user_id)
                         break
-
 
                     time.sleep(2)
 
