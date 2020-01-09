@@ -142,6 +142,7 @@ class TwitterCrawler():
                             # get response attributes
                             out['response_id'] = tweet.get('id')
                             out['response_date'] = tweet.get('created_at')
+                            out['response_date'] = tweet.get('created_at') # yyyy-mm-dd hh:mm:ss
                             out['response_text'] = tweet.get('full_text')
 
                             # get complain attributes
@@ -154,8 +155,10 @@ class TwitterCrawler():
 
                                 num_times_api_called = num_times_api_called + 1
 
-                                out['message_date'] = tweetR.get('created_at')
+                                out['message_date'] = tweetR.get('created_at') ## yyyy-mm-dd hh:mm:ss
                                 out['message_text'] = tweetR.get('text')
+                                out['message_text'] = out['message_text'].replace("\n","____$____")
+
                             except twython.exceptions.TwythonError as e:
                                 out['message_date'] = DEFAULT_DATE
                                 out['message_text'] = DEFAULT_MESSAGE
