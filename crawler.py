@@ -141,9 +141,9 @@ class TwitterCrawler():
 
                             # get response attributes
                             out['response_id'] = tweet.get('id')
-                            out['response_date'] = tweet.get('created_at')
-                            out['response_date'] = tweet.get('created_at') # yyyy-mm-dd hh:mm:ss
+                            out['response_date'] = tweet.get('created_at') ## yyyy-mm-dd hh:mm:ss
                             out['response_text'] = tweet.get('full_text')
+                            out['response_text'] = tweet.get('full_text').replace("\n","____$____")
 
                             # get complain attributes
                             out['message_id'] = response_to
