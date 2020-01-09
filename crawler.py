@@ -90,6 +90,7 @@ class TwitterCrawler():
         logger.info('Resume.')
 
 
+
     def fetch_user_timeline(self, user_id = None, since_id = 1):
 
         logger.info('Commencing tweet crawl for user_id: %s',user_id)
@@ -142,22 +143,20 @@ class TwitterCrawler():
                             # get response attributes
                             out['response_id'] = tweet.get('id')
                             out['response_date'] = tweet.get('created_at') ## yyyy-mm-dd hh:mm:ss
-                            out['response_text'] = tweet.get('full_text')
-                            out['response_text'] = tweet.get('full_text').replace("\n","____$____")
+                            out['response_text'] = tweet.get('full_text').replace("\n","__$__")
 
                             # get complain attributes
                             out['message_id'] = response_to
                             try:
 
                                 # find the tweet associated with the response id
-                                tweetR = self.twitter.show_status(id=response_to)
+                                tweetR = self.twitter.show_status(id=response_to,tweet_mode='extended')
                                 logger.debug(tweetR)
 
-                                num_times_api_called = num_times_api_called + 1
-
                                 out['message_date'] = tweetR.get('created_at') ## yyyy-mm-dd hh:mm:ss
-                                out['message_text'] = tweetR.get('text')
-                                out['message_text'] = out['message_text'].replace("\n","____$____")
+                                out['message_text'] = tweetR.get('full_text').replace("\n","__$__")
+
+                                num_times_api_called = num_times_api_called + 1
 
                             except twython.exceptions.TwythonError as e:
                                 out['message_date'] = DEFAULT_DATE
