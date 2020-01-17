@@ -9,8 +9,8 @@ https://api.twitter.com/1.1/search/tweets.json
 Source: [Official Docs](https://developer.twitter.com/en/docs/basics/rate-limits)
 
 ### search/tweets 
-Requests per 15 min: 450
-Supported History: 7 days 
+* Requests per 15 min: 450
+* Supported History: 7 days 
 
 ## Example
 
