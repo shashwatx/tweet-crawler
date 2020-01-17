@@ -33,8 +33,8 @@ twurl authorize --consumer-key ${consumer_key} --consumer-secret ${consumer_secr
 ```
 * Use
 ```
-query_term=$(rawurlencoded "vueling or iberia or easyjet")
-twurl /1.1/search/tweets.json?q=${query_term}&result_type=recent&count=15&lang=es
+query_term=$(rawurlencode "vueling or iberia or easyjet")
+twurl "/1.1/search/tweets.json?q=${query_term}&result_type=recent&count=15&lang=es&tweet_mode=extended" | jq . > out
 ```
 
 
