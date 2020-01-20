@@ -21,7 +21,7 @@ python driver.py --help
 
 ### Example
 ```
-python driver.py -u 123123123 -o data/ -c conf.json
+python driver.py -u 1379556830 -o data/ -c conf.json
 ```
 
 conf.json
@@ -35,6 +35,11 @@ conf.json
     }
 }
 ```
+
+### Find Twitter ID
+Use the following website.
+https://tweeterid.com/
+
 ## JSON Manipulation
 
 Use jq

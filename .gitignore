@@ -3,3 +3,6 @@ config.json
 __pycache__/
 data/
 .idea/
+details
+conf.json
+screenlog.*

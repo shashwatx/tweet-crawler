@@ -74,7 +74,7 @@ class TwitterCrawler():
 
     def rate_limit_error_occured(self, resource, api):
 
-        logger.warning('Rate limit reached')
+        logger.warn('Rate limit reached')
 
         # twitter returns what your rate-limit status for the specified resource is.
         rate_limits = self.twitter.get_application_rate_limit_status(resources=[resource])
@@ -88,6 +88,7 @@ class TwitterCrawler():
 
         time.sleep(wait_for)
         logger.info('Resume.')
+
 
 
     def fetch_user_timeline(self, user_id = None, since_id = 1):
@@ -116,7 +117,7 @@ class TwitterCrawler():
 
                 try:
 
-                    logger.info('Fetch the next batch of %d tweets.',NUM_TWEETS_IN_A_SINGLE_FETCH)
+                    logger.warn('Fetch the next batch of %d tweets.',NUM_TWEETS_IN_A_SINGLE_FETCH)
 
 
                     if current_max_id > 0:
@@ -132,7 +133,8 @@ class TwitterCrawler():
                     prev_max_id = current_max_id
                     for idx, tweet in enumerate(tweets):
 
-                        # filter on tweets that represent "handle" responding to someone
+                        # we are only interested in the timeline tweets that
+                        # represent the "handle" responding to someone.
                         response_to=tweet.get('in_reply_to_status_id_str')
                         if response_to is not None:
 
@@ -141,22 +143,27 @@ class TwitterCrawler():
 
                             # get response attributes
                             out['response_id'] = tweet.get('id')
-                            out['response_date'] = tweet.get('created_at')
-                            out['response_text'] = tweet.get('full_text')
+                            out['response_date'] = tweet.get('created_at') ## yyyy-mm-dd hh:mm:ss
+                            out['response_text'] = tweet.get('full_text').replace("\n","__$__")
 
                             # get complain attributes
                             out['message_id'] = response_to
                             try:
 
                                 # find the tweet associated with the response id
-                                tweetR = self.twitter.show_status(id=response_to)
+                                tweetR = self.twitter.show_status(id=response_to,tweet_mode='extended')
                                 logger.debug(tweetR)
+
+                                out['message_date'] = tweetR.get('created_at') ## yyyy-mm-dd hh:mm:ss
+                                out['message_text'] = tweetR.get('full_text').replace("\n","__$__")
 
                                 num_times_api_called = num_times_api_called + 1
 
-                                out['message_date'] = tweetR.get('created_at')
-                                out['message_text'] = tweetR.get('text')
                             except twython.exceptions.TwythonError as e:
+                                logger.error('I ran into exceptions while getting text for tweet id %s',response_to)
+                                e_message=repr(e)
+                                logger.info('Exception message: %s',e_message)
+
                                 out['message_date'] = DEFAULT_DATE
                                 out['message_text'] = DEFAULT_MESSAGE
 
@@ -164,6 +171,8 @@ class TwitterCrawler():
                             #f.write(json.dumps(out)+',\n')
                             writer.writerow(out)
                             num_tweets += 1
+                        else:
+                            logger.debug("The following is not an interesting tweet: %s",tweet.get('full_text').replace("\n","__$__"))
 
                         if current_max_id == 0 or current_max_id > int(tweet['id']):
                             current_max_id = int(tweet['id'])
@@ -173,7 +182,6 @@ class TwitterCrawler():
                     if (prev_max_id == current_max_id):
                         logger.info('breaking: %s',user_id)
                         break
-
 
                     time.sleep(2)
 
@@ -189,7 +197,7 @@ class TwitterCrawler():
                     logger.error('Encountered while crawling tweets for user_id: %s',user_id)
                     return since_id, True
 
-        with open(filename, mode='a') as f:
+        with open(filename+'.csv', mode='a') as f:
             f.write(']\n')
 
         logger.warn('Finished crawling for user id: %s',user_id)
