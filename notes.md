@@ -1,6 +1,6 @@
 # Notes on Standard Search API for Searching Tweets
 
-## API Endpoint
+## API Endpoint: Search Tweets
 ```
 https://api.twitter.com/1.1/search/tweets.json
 ```
@@ -31,7 +31,7 @@ apt-get install -y twurl
 ```
 twurl authorize --consumer-key ${consumer_key} --consumer-secret ${consumer_secret}
 ```
-* Use
+* Use: Keyword based Fetch
 ```
 query_term=$(rawurlencode "vueling OR iberia OR easyjet")
 twurl "/1.1/search/tweets.json?q=${query_term}&result_type=recent&count=15&lang=es&tweet_mode=extended" | jq '.statuses[].full_text'
